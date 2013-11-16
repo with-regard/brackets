@@ -59,11 +59,21 @@ define(function (require, exports, module) {
         $("#img-tip").hide();
         $(".img-guide").hide();
     }
+    /*
+     * hacky  fix for 5960 - the image resizing seems to off for some reason. But we can set the proper height from code
+     */
+    function _adjustImageSizeToView() {
+        if (_scale < 100) {
+            $("#img-preview").height($("#image-holder").height() - 60); // 60 = header height (48) + margint top + reasonable padding
+            _updateScale($("#img-preview").width());
+        }
+    }
     
     /** handle editor resize event, i.e. update scale sticker */
     function _onEditorAreaResize() {
         _hideGuidesAndTip();
         _updateScale($("#img-preview").width());
+        _adjustImageSizeToView();
     }
         
     /**
@@ -338,7 +348,9 @@ define(function (require, exports, module) {
                      .on("mouseleave", "#img-preview, #img-scale, #img-tip, .img-guide", _hideImageTip);
 
             _updateScale($(this).width());
-
+            // hacky  fix for 5960 - the image resizing seems to off for some reason. 
+            _adjustImageSizeToView();
+            
             minimumPixels = Math.floor(minimumPixels * 100 / _scale);
 
             // If the image size is too narrow in width or height, then 
