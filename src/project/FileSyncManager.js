@@ -51,6 +51,7 @@ define(function (require, exports, module) {
         Strings             = require("strings"),
         StringUtils         = require("utils/StringUtils"),
         FileUtils           = require("file/FileUtils"),
+        FileSystem          = require("filesystem/FileSystem"),
         FileSystemError     = require("filesystem/FileSystemError");
 
     
@@ -390,10 +391,11 @@ define(function (require, exports, module) {
         //  3) Refresh all Documents that are clean (if file changed on disk)
         //  4) Close all Documents that are clean (if file deleted on disk)
         //  5) Prompt about any Documents that are dirty (if file changed/deleted on disk)
+        //  6) Handle custom viewer files: If a custom viewer is currently displaying a file, check if it has been updated or deleted
         // Each phase fully completes (asynchronously) before the next one begins.
         
         
-        // 1) Check for external modifications
+        // 1) Check for external modifications for open documents
         var allDocs = DocumentManager.getAllOpenDocuments();
         
         findExternalChanges(allDocs)
@@ -448,6 +450,23 @@ define(function (require, exports, module) {
                 _alreadyChecking = false;
             });
         
+        // 6)
+        var fullPath = EditorManager.getCurrentlyViewedPath();
+        if (!DocumentManager.getCurrentDocument() && fullPath) {
+            var file = FileSystem.getFileForPath(fullPath);
+            // 
+            file.stat(function (err, stat) {
+                if (!err) {
+                    // Does file's timestamp differ from last sync time on the Document?
+                    if (stat.mtime.getTime() !== EditorManager.getCurrentlyViewedPathDiskTimestamp()) {
+                        EditorManager.notifyPathDeleted(fullPath);
+                    }
+                } else {
+                    // if we cannot stat the file we better close it.
+                    EditorManager.notifyPathDeleted(fullPath);
+                }
+            });
+        }
     }
     
     
