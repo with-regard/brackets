@@ -75,7 +75,7 @@ define(function (require, exports, module) {
     /** @type {?string} full path to file */
     var _currentlyViewedPath = null;
     /** @type {?Date} modification time of file */
-    var _currentlyViewedPathDiskTimestamp = null;
+    var _currentlyViewedPathMTime = null;
     /** @type {?JQuery} DOM node representing UI of custom view   */
     var _$currentCustomViewer = null;
     /** @type {?Object} view provider */
@@ -601,7 +601,7 @@ define(function (require, exports, module) {
             _currentEditorsDocument = null;
             _currentEditor = null;
             _currentlyViewedPath = null;
-            _currentlyViewedPathDiskTimestamp = null;
+            _currentlyViewedPathMTime = null;
             
             // No other Editor is gaining focus, so in this one special case we must trigger event manually
             _notifyActiveEditorChanged(null);
@@ -618,13 +618,13 @@ define(function (require, exports, module) {
         return _currentlyViewedPath;
     }
     
-    function getCurrentlyViewedPathDiskTimestamp() {
-        return _currentlyViewedPathDiskTimestamp;
+    function getCurrentlyViewedPathMTime() {
+        return _currentlyViewedPathMTime;
     }
 
     function _clearCurrentlyViewedPath() {
         _currentlyViewedPath = null;
-        _currentlyViewedPathDiskTimestamp = null;
+        _currentlyViewedPathMTime = null;
         $(exports).triggerHandler("currentlyViewedFileChange");
     }
     
@@ -636,7 +636,7 @@ define(function (require, exports, module) {
             _currentlyViewedPath = fullPath;
             // if this was invoked form an document open command we do have the modification timestamp
             // and can synchronously save the value            
-            _currentlyViewedPathDiskTimestamp = mtime;
+            _currentlyViewedPathMTime = mtime;
             $(exports).triggerHandler("currentlyViewedFileChange");
         } else if (fullPath && !mtime) {
             _currentlyViewedPath = fullPath;
@@ -645,7 +645,7 @@ define(function (require, exports, module) {
             var file = FileSystem.getFileForPath(fullPath);
             file.stat(function (fileError, stat) {
                 if (!fileError) {
-                    _currentlyViewedPathDiskTimestamp = stat.mtime.getTime();
+                    _currentlyViewedPathMTime = stat.mtime.getTime();
                     $(exports).triggerHandler("currentlyViewedFileChange");
                 } else {
                     notifyPathDeleted(fullPath);
@@ -654,7 +654,7 @@ define(function (require, exports, module) {
         } else {
             // if fullpath is not defined reset path and timestamp
             _currentlyViewedPath = null;
-            _currentlyViewedPathDiskTimestamp = null;
+            _currentlyViewedPathMTime = null;
             $(exports).triggerHandler("currentlyViewedFileChange");
         }
 
@@ -1066,7 +1066,7 @@ define(function (require, exports, module) {
     exports.getFocusedEditor              = getFocusedEditor;
     exports.getActiveEditor               = getActiveEditor;
     exports.getCurrentlyViewedPath        = getCurrentlyViewedPath;
-    exports.getCurrentlyViewedPathDiskTimestamp = getCurrentlyViewedPathDiskTimestamp;
+    exports.getCurrentlyViewedPathMTime   = getCurrentlyViewedPathMTime;
     exports.getFocusedInlineWidget        = getFocusedInlineWidget;
     exports.resizeEditor                  = resizeEditor;
     exports.registerInlineEditProvider    = registerInlineEditProvider;

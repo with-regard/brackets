@@ -458,7 +458,7 @@ define(function (require, exports, module) {
             file.stat(function (err, stat) {
                 if (!err) {
                     // Does file's timestamp differ from last sync time on the Document?
-                    if (stat.mtime.getTime() !== EditorManager.getCurrentlyViewedPathDiskTimestamp()) {
+                    if (stat.mtime.getTime() !== EditorManager.getCurrentlyViewedPathMTime()) {
                         EditorManager.notifyPathDeleted(fullPath);
                     }
                 } else {

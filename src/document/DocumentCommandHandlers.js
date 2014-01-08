@@ -238,17 +238,6 @@ define(function (require, exports, module) {
                         _showErrorAndCleanUp(fileError);
                     }
                 });
-                
-//                file.exists(function (fileError, fileExists) {
-//                    if (fileExists) {
-//                        EditorManager.showCustomViewer(viewProvider, fullPath);
-//                        result.resolve();
-//                    } else {
-//                        fileError = fileError || FileSystemError.NOT_FOUND;
-//                        _showErrorAndCleanUp(fileError);
-//                    }
-//                });
-                
             } else {
                 // Load the file if it was never open before, and then switch to it in the UI
                 DocumentManager.getDocumentForPath(fullPath)
