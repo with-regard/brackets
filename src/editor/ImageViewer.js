@@ -360,12 +360,13 @@ define(function (require, exports, module) {
     }
     
     function refresh() {
-        var urlMod = $("#img-preview").attr("src");
+        var urlMod = $("#img-preview").attr("src"),
+            now = new Date().valueOf();
         
         if (urlMod.indexOf("#") > 0) {
-            urlMod = urlMod.replace("#!", "");
+            urlMod = urlMod.replace(/#\d+/, "#" + now);
         } else {
-            urlMod = urlMod + "#!";
+            urlMod = urlMod + "#" + now;
         }
         $("#img-preview").attr("src", urlMod);
     }

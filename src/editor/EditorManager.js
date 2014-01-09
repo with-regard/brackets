@@ -757,13 +757,6 @@ define(function (require, exports, module) {
         }
     }
     
-    function refreshCustomViewer(fullPath) {
-        var customViewer = getCustomViewerForPath(fullPath);
-        if (customViewer.refresh) {
-            customViewer.refresh();
-        }
-    }
-    
     /**
      * Update file name if necessary
      */
@@ -784,6 +777,14 @@ define(function (require, exports, module) {
         var lang = LanguageManager.getLanguageForPath(fullPath);
         
         return _customViewerRegistry[lang.getId()];
+    }
+    
+    // TODO write docs
+    function refreshCustomViewer(fullPath) {
+        var customViewer = getCustomViewerForPath(fullPath);
+        if (customViewer.refresh) {
+            customViewer.refresh();
+        }
     }
     
     /** 
@@ -1061,7 +1062,6 @@ define(function (require, exports, module) {
     exports._resetViewStates              = _resetViewStates;
     exports._doShow                       = _doShow;
     exports._notifyActiveEditorChanged    = _notifyActiveEditorChanged;
-    exports._setCurrentlyViewedPath       = _setCurrentlyViewedPath;
     
     exports.REFRESH_FORCE = REFRESH_FORCE;
     exports.REFRESH_SKIP  = REFRESH_SKIP;
@@ -1084,7 +1084,7 @@ define(function (require, exports, module) {
     exports.closeInlineWidget             = closeInlineWidget;
     exports.showCustomViewer              = showCustomViewer;
     exports.registerCustomViewer          = registerCustomViewer;
-    exports.refreshCustomViewer           = refreshCustomViewer;    
+    exports.refreshCustomViewer           = refreshCustomViewer;
     exports.getCustomViewerForPath        = getCustomViewerForPath;
     exports.notifyPathDeleted             = notifyPathDeleted;
     exports.closeCustomViewer             = closeCustomViewer;
