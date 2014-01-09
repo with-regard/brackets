@@ -44,12 +44,12 @@
  *                             The 2nd arg to the listener is which Editor became active; the 3rd arg is
  *                             which Editor is deactivated as a result. Either one may be null.
  *                             NOTE (#1257): getFocusedEditor() sometimes lags behind this event. Listeners
- *                             should use the arguments or call getActiveEditor() to reliably see which Editor 
+ *                             should use the arguments or call getActiveEditor() to reliably see which Editor
  *                             just gained focus.
  */
 define(function (require, exports, module) {
     "use strict";
-    
+
     // Load dependent modules
     var Commands            = require("command/Commands"),
         PanelManager        = require("view/PanelManager"),
@@ -57,13 +57,14 @@ define(function (require, exports, module) {
         DocumentManager     = require("document/DocumentManager"),
         PerfUtils           = require("utils/PerfUtils"),
         Editor              = require("editor/Editor").Editor,
+        FileSystem          = require("filesystem/FileSystem"),
         InlineTextEditor    = require("editor/InlineTextEditor").InlineTextEditor,
         Strings             = require("strings"),
         LanguageManager     = require("language/LanguageManager");
-    
+
     /** @type {jQueryObject} DOM node that contains all editors (visible and hidden alike) */
     var _editorHolder = null;
-    
+
     /**
      * Currently visible full-size Editor, or null if no editors open
      * @type {?Editor}
@@ -73,51 +74,53 @@ define(function (require, exports, module) {
     var _currentEditorsDocument = null;
     /** @type {?string} full path to file */
     var _currentlyViewedPath = null;
+    /** @type {?Date} modification time of file */
+    var _currentlyViewedFileMTime = null;
     /** @type {?JQuery} DOM node representing UI of custom view   */
     var _$currentCustomViewer = null;
     /** @type {?Object} view provider */
     var _currentViewProvider = null;
     /** @type {?Object} view provider registry */
     var _customViewerRegistry = {};
-    
+
     /**
      * Currently focused Editor (full-size, inline, or otherwise)
      * @type {?Editor}
      */
     var _lastFocusedEditor = null;
-    
+
     /**
      * Maps full path to scroll pos & cursor/selection info. Not kept up to date while an editor is current.
      * Only updated when switching / closing editor, or when requested explicitly via _getViewState().
      * @type {Object<string, {scrollPos:{x:number, y:number}, selection:{start:{line:number, ch:number}, end:{line:number, ch:number}}}>}
      */
     var _viewStateCache = {};
-    
+
     /**
      * Last known editor area width, used to detect when the window is resized horizontally.
      */
     var _lastEditorWidth = null;
-    
+
     /**
-     * Registered inline-editor widget providers sorted descending by priority. 
+     * Registered inline-editor widget providers sorted descending by priority.
      * See {@link #registerInlineEditProvider()}.
      * @type {Array.<{priority:number, provider:function(...)}>}
      */
     var _inlineEditProviders = [];
-    
+
     /**
      * Registered inline documentation widget providers sorted descending by priority.
      * See {@link #registerInlineDocsProvider()}.
      * @type {Array.<{priority:number, provider:function(...)}>}
      */
     var _inlineDocsProviders = [];
-    
+
     /**
      * Registered jump-to-definition providers. See {@link #registerJumpToDefProvider()}.
      * @type {Array.<function(...)>}
      */
     var _jumpToDefProviders = [];
-    
+
 	/**
      * @private
      * @param {?Editor} current
@@ -130,10 +133,10 @@ define(function (require, exports, module) {
         }
         var previous = _lastFocusedEditor;
         _lastFocusedEditor = current;
-        
+
         $(exports).triggerHandler("activeEditorChange", [current, previous]);
     }
-	
+
     /**
      * Creates a new Editor bound to the given Document.
      * The editor is appended to the given container as a visible child.
@@ -151,33 +154,33 @@ define(function (require, exports, module) {
         $(editor).on("focus", function () {
             _notifyActiveEditorChanged(this);
         });
-        
+
         return editor;
     }
-    
+
     /**
      * @private
      * Finds an inline widget provider from the given list that can offer a widget for the current cursor
      * position, and once the widget has been created inserts it into the editor.
      * @param {!Editor} editor The host editor
      * @param {!Array.<{priority:number, provider:function(!Editor, !{line:number, ch:number}):?$.Promise}>} prioritized providers
-     * @return {$.Promise} a promise that will be resolved when an InlineWidget 
+     * @return {$.Promise} a promise that will be resolved when an InlineWidget
      *      is created or rejected if no inline providers have offered one.
      */
     function _openInlineWidget(editor, providers) {
         PerfUtils.markStart(PerfUtils.INLINE_WIDGET_OPEN);
-        
+
         // Run through inline-editor providers until one responds
         var pos = editor.getCursorPos(),
             inlinePromise,
             i,
             result = new $.Deferred();
-        
+
         for (i = 0; i < providers.length && !inlinePromise; i++) {
             var provider = providers[i].provider;
             inlinePromise = provider(editor, pos);
         }
-        
+
         // If one of them will provide a widget, show it inline once ready
         if (inlinePromise) {
             inlinePromise.done(function (inlineWidget) {
@@ -195,10 +198,10 @@ define(function (require, exports, module) {
             PerfUtils.finalizeMeasurement(PerfUtils.INLINE_WIDGET_OPEN);
             result.reject();
         }
-        
+
         return result.promise();
     }
-    
+
     /**
      * Inserts a prioritized provider object into the array in sorted (descending) order.
      *
@@ -212,16 +215,16 @@ define(function (require, exports, module) {
                 priority: priority,
                 provider: provider
             };
-        
+
         for (index = 0; index < array.length; index++) {
             if (array[index].priority < priority) {
                 break;
             }
         }
-        
+
         array.splice(index, 0, prioritizedProvider);
     }
-    
+
     /**
      * Removes the given widget UI from the given hostEditor (agnostic of what the widget's content
      * is). The widget's onClosed() callback will be run as a result.
@@ -239,21 +242,21 @@ define(function (require, exports, module) {
             if (cursorLine !== widgetLine) {
                 hostEditor.setCursorPos({ line: widgetLine, pos: 0 });
             }
-            
+
             hostEditor.focus();
         }
-        
+
         return hostEditor.removeInlineWidget(inlineWidget);
     }
-    
+
     /**
      * Registers a new inline editor provider. When Quick Edit is invoked each registered provider is
      * asked if it wants to provide an inline editor given the current editor and cursor location.
      * An optional priority parameter is used to give providers with higher priority an opportunity
      * to provide an inline editor before providers with lower priority.
-     * 
+     *
      * @param {function(!Editor, !{line:number, ch:number}):?$.Promise} provider
-     * @param {number=} priority 
+     * @param {number=} priority
      * The provider returns a promise that will be resolved with an InlineWidget, or returns null
      * to indicate the provider doesn't want to respond to this case.
      */
@@ -269,9 +272,9 @@ define(function (require, exports, module) {
      * asked if it wants to provide inline docs given the current editor and cursor location.
      * An optional priority parameter is used to give providers with higher priority an opportunity
      * to provide an inline editor before providers with lower priority.
-     * 
+     *
      * @param {function(!Editor, !{line:number, ch:number}):?$.Promise} provider
-     * @param {number=} priority 
+     * @param {number=} priority
      * The provider returns a promise that will be resolved with an InlineWidget, or returns null
      * to indicate the provider doesn't want to respond to this case.
      */
@@ -281,11 +284,11 @@ define(function (require, exports, module) {
         }
         _insertProviderSorted(_inlineDocsProviders, provider, priority);
     }
-    
+
     /**
      * Registers a new jump-to-definition provider. When jump-to-definition is invoked each
      * registered provider is asked if it wants to provide jump-to-definition results, given
-     * the current editor and cursor location. 
+     * the current editor and cursor location.
      * @param {function(!Editor, !{line:number, ch:number}):?$.Promise} provider
      * The provider returns a promise that will be resolved with jump-to-definition results, or
      * returns null to indicate the provider doesn't want to respond to this case.
@@ -293,7 +296,7 @@ define(function (require, exports, module) {
     function registerJumpToDefProvider(provider) {
         _jumpToDefProviders.push(provider);
     }
-    
+
     /**
      * @private
      * Given a host editor, return a list of all Editors in all its open inline widgets. (Ignoring
@@ -304,7 +307,7 @@ define(function (require, exports, module) {
      */
     function getInlineEditors(hostEditor) {
         var inlineEditors = [];
-        
+
         if (hostEditor) {
             hostEditor.getInlineWidgets().forEach(function (widget) {
                 if (widget instanceof InlineTextEditor && widget.editor) {
@@ -315,9 +318,9 @@ define(function (require, exports, module) {
 
         return inlineEditors;
     }
-    
-    
-    
+
+
+
     /**
      * @private
      * Creates a new "full-size" (not inline) Editor for the given Document, and sets it as the
@@ -332,14 +335,14 @@ define(function (require, exports, module) {
         var editor = _createEditorForDocument(document, true, container);
         editor.setVisible(false);
     }
-    
+
     /** Returns the visible full-size Editor corresponding to DocumentManager.getCurrentDocument() */
     function getCurrentFullEditor() {
         // This *should* always be equivalent to DocumentManager.getCurrentDocument()._masterEditor
         return _currentEditor;
     }
 
-    
+
     /**
      * Creates a new inline Editor instance for the given Document.
      * The editor is not yet visible or attached to a host editor.
@@ -360,15 +363,15 @@ define(function (require, exports, module) {
         $(inlineContent).hide();
         var inlineEditor = _createEditorForDocument(doc, false, inlineContent, range);
         $(inlineContent).show();
-        
+
         return { content: inlineContent, editor: inlineEditor };
     }
-    
-    
+
+
     /**
      * Disposes the given Document's full-size editor if the doc is no longer "open" from the user's
      * standpoint - not in the working set and not currentDocument).
-     * 
+     *
      * Destroying the full-size editor releases ONE ref to the Document; if inline editors or other
      * UI elements are still referencing the Document it will still be 'open' (kept alive) from
      * DocumentManager's standpoint. However, destroying the full-size editor does remove the backing
@@ -388,14 +391,14 @@ define(function (require, exports, module) {
             }
             return;
         }
-        
+
         // If outgoing editor is no longer needed, dispose it
         var isCurrentDocument = (DocumentManager.getCurrentDocument() === document);
         var isInWorkingSet = (DocumentManager.findInWorkingSet(document.file.fullPath) !== -1);
         if (!isCurrentDocument && !isInWorkingSet) {
             // Destroy the editor widget (which un-refs the Document and reverts it to read-only mode)
             editor.destroy();
-            
+
             // Our callers should really ensure this, but just for safety...
             if (_currentEditor === editor) {
                 _currentEditorsDocument = null;
@@ -404,7 +407,7 @@ define(function (require, exports, module) {
         }
     }
 
-    /** 
+    /**
      * Returns focus to the last visible editor that had focus. If no editor visible, does nothing.
      * This function should be called to restore editor focus after it has been temporarily
      * removed. For example, after a dialog with editable text is closed.
@@ -414,15 +417,15 @@ define(function (require, exports, module) {
             _lastFocusedEditor.focus();
         }
     }
-    
-    
+
+
     /**
      * Flag for _onEditorAreaResize() to always force refresh.
      * @const
      * @type {string}
      */
     var REFRESH_FORCE = "force";
-    
+
     /**
      * Flag for _onEditorAreaResize() to never refresh.
      * @const
@@ -441,15 +444,15 @@ define(function (require, exports, module) {
         // PanelManager computes the correct editor-holder size & calls us back with it, via _onEditorAreaResize()
         PanelManager._notifyLayoutChange();
     }
-    
+
     /**
      * Update the current CodeMirror editor's size. Must be called any time the contents of the editor area
      * are swapped or any time the editor-holder area has changed height. EditorManager calls us in the swap
      * case. PanelManager calls us in the most common height-change cases (panel and/or window resize), but
      * some other cases are handled by external code calling resizeEditor() (e.g. ModalBar hide/show).
-     * 
+     *
      * @param {number} editorAreaHt
-     * @param {string=} refreshFlag For internal use. Set to "force" to ensure the editor will refresh, 
+     * @param {string=} refreshFlag For internal use. Set to "force" to ensure the editor will refresh,
      *    "skip" to ensure the editor does not refresh, or leave undefined to let _onEditorAreaResize()
      *    determine whether it needs to refresh.
      */
@@ -476,7 +479,7 @@ define(function (require, exports, module) {
             }
         }
     }
-    
+
     /** Updates _viewStateCache from the given editor's actual current state */
     function _saveEditorViewState(editor) {
         _viewStateCache[editor.document.file.fullPath] = {
@@ -484,7 +487,7 @@ define(function (require, exports, module) {
             scrollPos: editor.getScrollPos()
         };
     }
-    
+
     /** Updates the given editor's actual state from _viewStateCache, if any state stored */
     function _restoreEditorViewState(editor) {
         // We want to ignore the current state of the editor, so don't call _getViewState()
@@ -498,7 +501,7 @@ define(function (require, exports, module) {
             }
         }
     }
-    
+
     /** Returns up-to-date view state for the given file, or null if file not open and no state cached */
     function _getViewState(fullPath) {
         if (_currentEditorsDocument && _currentEditorsDocument.file.fullPath === fullPath) {
@@ -506,7 +509,7 @@ define(function (require, exports, module) {
         }
         return _viewStateCache[fullPath];
     }
-    
+
     /** Removes all cached view state info and replaces it with the given mapping */
     function _resetViewStates(viewStates) {
         _viewStateCache = viewStates;
@@ -519,11 +522,11 @@ define(function (require, exports, module) {
         // Show new editor
         _currentEditorsDocument = document;
         _currentEditor = document._masterEditor;
-        
+
         // Skip refreshing the editor since we're going to refresh it more explicitly below
         _currentEditor.setVisible(true, false);
         _currentEditor.focus();
-        
+
         // Resize and refresh the editor, since it might have changed size or had other edits applied
         // since it was last visible.
         PanelManager._notifyLayoutChange(REFRESH_FORCE);
@@ -543,7 +546,7 @@ define(function (require, exports, module) {
             _currentEditor.setVisible(false);
             _destroyEditorIfUnneeded(_currentEditorsDocument);
         }
-        
+
         // Ensure a main editor exists for this document to show in the UI
         var createdNewEditor = false;
         if (!document._masterEditor) {
@@ -554,27 +557,27 @@ define(function (require, exports, module) {
             if (window.getSelection && window.getSelection().empty) {  // Chrome
                 window.getSelection().empty();
             }
-            
+
             // Editor doesn't exist: populate a new Editor with the text
             _createFullEditorForDocument(document);
         }
-        
+
         _doShow(document);
-        
+
         if (createdNewEditor) {
             _restoreEditorViewState(document._masterEditor);
         }
     }
-    
+
     /**
-     * resets editor state to make sure getFocusedEditor(), getActiveEditor() 
-     * and getCurrentFullEditor() return null when an image or the NoEditor 
+     * resets editor state to make sure getFocusedEditor(), getActiveEditor()
+     * and getCurrentFullEditor() return null when an image or the NoEditor
      * placeholder is displayed.
      */
     function _nullifyEditor() {
         if (_currentEditor) {
             _saveEditorViewState(_currentEditor);
-            
+
             // This is a hack to deal with #5589. The issue is that CodeMirror's logic for polling its
             // hidden input field relies on whether there's a selection in the input field or not. When
             // we hide the editor, the input field loses its selection. Somehow, CodeMirror's readInput()
@@ -591,42 +594,85 @@ define(function (require, exports, module) {
             // ends up synchronously setting focus to another editor, which has the effect of
             // forcing a synchronous blur event as well.
             _currentEditor._codeMirror.getInputField().blur();
-            
+
             _currentEditor.setVisible(false);
             _destroyEditorIfUnneeded(_currentEditorsDocument);
-            
+
             _currentEditorsDocument = null;
             _currentEditor = null;
             _currentlyViewedPath = null;
-            
+            _currentlyViewedFileMTime = null;
+
             // No other Editor is gaining focus, so in this one special case we must trigger event manually
             _notifyActiveEditorChanged(null);
         }
     }
-    
+
     /** Hide the currently visible editor and show a placeholder UI in its place */
     function _showNoEditor() {
         $("#not-editor").css("display", "");
         _nullifyEditor();
     }
     
+    /**
+     * returns the full path to the file currently in view, i.e. a text doc in an editor
+     * or a file in a custom viewer, i.e. an image.
+     */
     function getCurrentlyViewedPath() {
         return _currentlyViewedPath;
     }
-    
+
+    /**
+     * returns the the modification time stamp on disk of the file currently in view, 
+     * i.e. a text doc in an editor or a file in a custom viewer, i.e. an image.
+     */
+    function getCurrentlyViewedFileMTime() {
+        return _currentlyViewedFileMTime;
+    }
+
     function _clearCurrentlyViewedPath() {
         _currentlyViewedPath = null;
+        _currentlyViewedFileMTime = null;
         $(exports).triggerHandler("currentlyViewedFileChange");
     }
-    
-    function _setCurrentlyViewedPath(fullPath) {
-        _currentlyViewedPath = fullPath;
-        $(exports).triggerHandler("currentlyViewedFileChange");
+
+    var notifyPathDeleted;
+
+    function _setCurrentlyViewedPath(fullPath, mtime) {
+
+        if (fullPath) {
+            if (mtime) {
+                _currentlyViewedPath = fullPath;
+                // if this was invoked form an document open command we do have the modification timestamp
+                // and can synchronously save the value
+                _currentlyViewedFileMTime = mtime;
+                $(exports).triggerHandler("currentlyViewedFileChange");
+            } else {
+                _currentlyViewedPath = fullPath;
+                // if this was invoked without the modification time
+                // we will fetch the timestamp asynchrmously
+                var file = FileSystem.getFileForPath(fullPath);
+                file.stat(function (fileError, stat) {
+                    if (!fileError) {
+                        _currentlyViewedFileMTime = stat.mtime.getTime();
+                        $(exports).triggerHandler("currentlyViewedFileChange");
+                    } else {
+                        notifyPathDeleted(fullPath);
+                    }
+                });
+            }
+        } else {
+            // if fullpath is not defined reset path and timestamp
+            _currentlyViewedPath = null;
+            _currentlyViewedFileMTime = null;
+            $(exports).triggerHandler("currentlyViewedFileChange");
+        }
+
     }
-    
+
     /** Remove existing custom view if present */
     function _removeCustomViewer() {
-        
+
         if (_$currentCustomViewer) {
             _$currentCustomViewer.remove();
             if (_currentViewProvider.onRemove) {
@@ -636,8 +682,8 @@ define(function (require, exports, module) {
         _$currentCustomViewer = null;
         _currentViewProvider = null;
     }
-    
-    /** 
+
+    /**
      * Closes the customViewer currently displayed, shows the NoEditor view
      * and notifies the ProjectManager to update the file selection
      */
@@ -647,33 +693,33 @@ define(function (require, exports, module) {
         _showNoEditor();
     }
 
-    /** 
+    /**
      * Append custom view to editor-holder
      * @param {!Object} provider  custom view provider
      * @param {!string} fullPath  path to the file displayed in the custom view
      */
-    function showCustomViewer(provider, fullPath) {
+    function showCustomViewer(provider, fullPath, mtime) {
         // Don't show the same custom view again if file path
         // and view provider are still the same.
         if (_currentlyViewedPath === fullPath &&
                 _currentViewProvider === provider) {
             return;
         }
-        
+
         // Clean up currently viewing document or custom viewer
         DocumentManager._clearCurrentDocument();
         _removeCustomViewer();
-    
+
         // Hide the not-editor or reset current editor
         $("#not-editor").css("display", "none");
         _nullifyEditor();
-        
+
         _currentViewProvider = provider;
-        
+
         // add path, dimensions and file size to the view after loading image
         _$currentCustomViewer = provider.render(fullPath, $("#editor-holder"));
-        
-        _setCurrentlyViewedPath(fullPath);
+
+        _setCurrentlyViewedPath(fullPath, mtime);
     }
 
     /**
@@ -686,31 +732,34 @@ define(function (require, exports, module) {
     function showingCustomViewerForPath(fullPath) {
         return (_currentViewProvider && _currentlyViewedPath === fullPath);
     }
-    
+
     /**
-     * Registers a new custom viewer provider. To create an extension 
-     * that enables Brackets to view files that cannot be shown as  
+     * Registers a new custom viewer provider. To create an extension
+     * that enables Brackets to view files that cannot be shown as
      * text such as binary files, use this method to register a CustomViewer.
-     * 
-     * A CustomViewer, such as ImageViewer in Brackets core needs to 
-     * implement and export two methods: 
+     *
+     * A CustomViewer, such as ImageViewer in Brackets core needs to
+     * implement and export two methods:
      * - render
      *      @param {!string} fullPath Path to the image file
-     *      @param {!jQueryObject} $editorHolder The DOM element to append the view to.     
+     *      @param {!jQueryObject} $editorHolder The DOM element to append the view to.
      * - onRemove
      *      signs off listeners and performs any required clean up when editor manager closes
      *      the custom viewer
+     * - refresh (optional)
+     *      notifies a custom viewer of a timstamp
+     *      change of a file in view in a custom viewer
      *
      * By registering a CustomViewer with EditorManager  Brackets is
-     * enabled to view files for one or more given file extensions. 
+     * enabled to view files for one or more given file extensions.
      * The first argument defines a so called languageId which bundles
      * file extensions to be handled by the custom viewer, see more
      * in LanguageManager JSDocs.
-     * The second argument is an instance of the custom viewer that is ready to display 
+     * The second argument is an instance of the custom viewer that is ready to display
      * files.
-     * 
-     * @param {!String} languageId, i.e. string such as image, audio, etc to 
-     *                              identify a language known to LanguageManager 
+     *
+     * @param {!String} languageId, i.e. string such as image, audio, etc to
+     *                              identify a language known to LanguageManager
      * @param {!Object} provider custom view provider instance
      */
     function registerCustomViewer(langId, provider) {
@@ -720,7 +769,7 @@ define(function (require, exports, module) {
             console.error("There already is a custom viewer registered for language id  \"" + langId + "\"");
         }
     }
-    
+
     /**
      * Update file name if necessary
      */
@@ -730,7 +779,7 @@ define(function (require, exports, module) {
         }
     }
 
-    /** 
+    /**
      * Return the provider of a custom viewer for the given path if one exists.
      * Otherwise, return null.
      *
@@ -739,20 +788,36 @@ define(function (require, exports, module) {
      */
     function getCustomViewerForPath(fullPath) {
         var lang = LanguageManager.getLanguageForPath(fullPath);
-        
+
         return _customViewerRegistry[lang.getId()];
     }
-    
-    /** 
-     * Clears custom viewer for a file with a given path and displays 
-     * an alternate file or the no editor view. 
-     * If no param fullpath is passed an alternate file will be opened 
+
+    /**
+     * Calls refresh on custom viewer if the custom viewer implements it.
+     * This will happen when a file displayed by a custom viewer changes 
+     * on disk, to allow the custom viewer to force a reload of a file.  
+     * CEF caches files loaded via the file-protocol and doesn't honor the 
+     * files modification date to determin wether it is stale.
+     *
+     * @param {!string} fullPath - path to file to be refreshed by custom viewer     
+     */
+    function refreshCustomViewer(fullPath) {
+        var customViewer = getCustomViewerForPath(fullPath);
+        if (customViewer.refresh) {
+            customViewer.refresh();
+        }
+    }
+
+    /**
+     * Clears custom viewer for a file with a given path and displays
+     * an alternate file or the no editor view.
+     * If no param fullpath is passed an alternate file will be opened
      * regardless of the current value of _currentlyViewedPath.
-     * If param fullpath is provided then only if fullpath matches 
+     * If param fullpath is provided then only if fullpath matches
      * the currently viewed file an alternate file will be opened.
      * @param {?string} fullPath - file path of deleted file.
      */
-    function notifyPathDeleted(fullPath) {
+    notifyPathDeleted = function (fullPath) {
         function openAlternateFile() {
             var fileToOpen = DocumentManager.getNextPrevFile(1);
             if (fileToOpen) {
@@ -766,15 +831,15 @@ define(function (require, exports, module) {
         if (!fullPath || _currentlyViewedPath === fullPath) {
             openAlternateFile();
         }
-    }
-    
+    };
+
     /** Handles changes to DocumentManager.getCurrentDocument() */
     function _onCurrentDocumentChange() {
         var doc = DocumentManager.getCurrentDocument(),
             container = _editorHolder.get(0);
-        
+
         var perfTimerName = PerfUtils.markStart("EditorManager._onCurrentDocumentChange():\t" + (!doc || doc.file.fullPath));
-        
+
         // When the document or file in view changes clean up.
         _removeCustomViewer();
         // Update the UI to show the right editor (or nothing), and also dispose old editor if no
@@ -789,7 +854,7 @@ define(function (require, exports, module) {
 
         PerfUtils.addMeasurement(perfTimerName);
     }
-    
+
     /** Handles removals from DocumentManager's working set list */
     function _onWorkingSetRemove(event, removedFile) {
         // There's one case where an editor should be disposed even though the current document
@@ -821,7 +886,7 @@ define(function (require, exports, module) {
     //    "X" button) (and thus implicitly navigated away from)
     //      --> handled by _onWorkingSetRemove() currently, but could be _onCurrentDocumentChange()
     //      just as easily (depends on the order of events coming from DocumentManager)
-    
+
     /**
      * Designates the DOM node that will contain the currently active editor instance. EditorManager
      * will own the content of this DOM node.
@@ -832,19 +897,19 @@ define(function (require, exports, module) {
             console.error("Cannot change editor area after an editor has already been created!");
             return;
         }
-        
+
         _editorHolder = holder;
-        
+
         resizeEditor();  // if no files open at startup, we won't get called back later to resize the "no-editor" placeholder
     }
-    
+
     /**
      * Returns the currently focused inline widget, if any.
      * @return {?InlineWidget}
      */
     function getFocusedInlineWidget() {
         var result = null;
-        
+
         if (_currentEditor) {
             _currentEditor.getInlineWidgets().forEach(function (widget) {
                 if (widget.hasFocus()) {
@@ -852,7 +917,7 @@ define(function (require, exports, module) {
                 }
             });
         }
-        
+
         return result;
     }
 
@@ -867,11 +932,11 @@ define(function (require, exports, module) {
         }
         return null;
     }
-    
+
     /**
      * Returns the currently focused editor instance (full-sized OR inline editor).
      * This function is similar to getActiveEditor(), with one main difference: this
-     * function will only return editors that currently have focus, whereas 
+     * function will only return editors that currently have focus, whereas
      * getActiveEditor() will return the last visible editor that was given focus (but
      * may not currently have focus because, for example, a dialog with editable text
      * is open).
@@ -879,7 +944,7 @@ define(function (require, exports, module) {
      */
     function getFocusedEditor() {
         if (_currentEditor) {
-            
+
             // See if any inlines have focus
             var focusedInline = _getFocusedInlineEditor();
             if (focusedInline) {
@@ -891,13 +956,13 @@ define(function (require, exports, module) {
                 return _currentEditor;
             }
         }
-        
+
         return null;
     }
- 
+
     /**
-     * Returns the current active editor (full-sized OR inline editor). This editor may not 
-     * have focus at the moment, but it is visible and was the last editor that was given 
+     * Returns the current active editor (full-sized OR inline editor). This editor may not
+     * have focus at the moment, but it is visible and was the last editor that was given
      * focus. Returns null if no editors are active.
      * @see getFocusedEditor()
      * @returns {?Editor}
@@ -905,8 +970,8 @@ define(function (require, exports, module) {
     function getActiveEditor() {
         return _lastFocusedEditor;
     }
-    
-    
+
+
     /**
      * Closes any focused inline widget. Else, asynchronously asks providers to create one.
      *
@@ -917,10 +982,10 @@ define(function (require, exports, module) {
      */
     function _toggleInlineWidget(providers) {
         var result = new $.Deferred();
-        
+
         if (_currentEditor) {
             var inlineWidget = getFocusedInlineWidget();
-            
+
             if (inlineWidget) {
                 // an inline widget's editor has focus, so close it
                 PerfUtils.markStart(PerfUtils.INLINE_WIDGET_CLOSE);
@@ -941,10 +1006,10 @@ define(function (require, exports, module) {
             // Can not open an inline editor without a host editor
             result.reject();
         }
-        
+
         return result.promise();
     }
-    
+
     /**
      * Asynchronously asks providers to handle jump-to-definition.
      * @return {!Promise} null if no appropriate provider exists. Else, returns a promise
@@ -955,12 +1020,12 @@ define(function (require, exports, module) {
         var promise,
             i,
             result = new $.Deferred();
-        
+
         if (_currentEditor) {
             // main editor has focus
 
             PerfUtils.markStart(PerfUtils.JUMP_TO_DEFINITION);
-            
+
             // Run through providers until one responds
             for (i = 0; i < providers.length && !promise; i++) {
                 var provider = providers[i];
@@ -982,14 +1047,14 @@ define(function (require, exports, module) {
                 PerfUtils.finalizeMeasurement(PerfUtils.JUMP_TO_DEFINITION);
                 result.reject();
             }
-            
+
         } else {
             result.reject();
         }
-        
+
         return result.promise();
     }
-    
+
     // Initialize: command handlers
     CommandManager.register(Strings.CMD_TOGGLE_QUICK_EDIT, Commands.TOGGLE_QUICK_EDIT, function () {
         return _toggleInlineWidget(_inlineEditProviders);
@@ -1018,10 +1083,10 @@ define(function (require, exports, module) {
     exports._resetViewStates              = _resetViewStates;
     exports._doShow                       = _doShow;
     exports._notifyActiveEditorChanged    = _notifyActiveEditorChanged;
-    
+
     exports.REFRESH_FORCE = REFRESH_FORCE;
     exports.REFRESH_SKIP  = REFRESH_SKIP;
-    
+
     // Define public API
     exports.setEditorHolder               = setEditorHolder;
     exports.getCurrentFullEditor          = getCurrentFullEditor;
@@ -1030,6 +1095,7 @@ define(function (require, exports, module) {
     exports.getFocusedEditor              = getFocusedEditor;
     exports.getActiveEditor               = getActiveEditor;
     exports.getCurrentlyViewedPath        = getCurrentlyViewedPath;
+    exports.getCurrentlyViewedFileMTime   = getCurrentlyViewedFileMTime;
     exports.getFocusedInlineWidget        = getFocusedInlineWidget;
     exports.resizeEditor                  = resizeEditor;
     exports.registerInlineEditProvider    = registerInlineEditProvider;
@@ -1039,6 +1105,7 @@ define(function (require, exports, module) {
     exports.closeInlineWidget             = closeInlineWidget;
     exports.showCustomViewer              = showCustomViewer;
     exports.registerCustomViewer          = registerCustomViewer;
+    exports.refreshCustomViewer           = refreshCustomViewer;
     exports.getCustomViewerForPath        = getCustomViewerForPath;
     exports.notifyPathDeleted             = notifyPathDeleted;
     exports.closeCustomViewer             = closeCustomViewer;

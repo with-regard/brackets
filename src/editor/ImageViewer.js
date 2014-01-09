@@ -1,24 +1,24 @@
 /*
  * Copyright (c) 2013 Adobe Systems Incorporated. All rights reserved.
- *  
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"), 
- * to deal in the Software without restriction, including without limitation 
- * the rights to use, copy, modify, merge, publish, distribute, sublicense, 
- * and/or sell copies of the Software, and to permit persons to whom the 
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- *  
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *  
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- * 
+ *
  */
 
 
@@ -26,7 +26,7 @@
 /*global define, $, window, Mustache */
 define(function (require, exports, module) {
     "use strict";
-    
+
     var DocumentManager     = require("document/DocumentManager"),
         EditorManager       = require("editor/EditorManager"),
         ImageHolderTemplate = require("text!htmlContent/image-holder.html"),
@@ -35,12 +35,12 @@ define(function (require, exports, module) {
         Strings             = require("strings"),
         StringUtils         = require("utils/StringUtils"),
         FileSystem          = require("filesystem/FileSystem");
-    
+
     var _naturalWidth = 0,
         _scale = 100,
         _scaleDivInfo = null;   // coordinates of hidden scale sticker
-    
-    /** Update the scale element, i.e. on resize 
+
+    /** Update the scale element, i.e. on resize
      *  @param {!string} currentWidth actual width of image in view
      */
     function _updateScale(currentWidth) {
@@ -54,18 +54,18 @@ define(function (require, exports, module) {
             $("#img-scale").hide();
         }
     }
-    
+
     function _hideGuidesAndTip() {
         $("#img-tip").hide();
         $(".img-guide").hide();
     }
-    
+
     /** handle editor resize event, i.e. update scale sticker */
     function _onEditorAreaResize() {
         _hideGuidesAndTip();
         _updateScale($("#img-preview").width());
     }
-        
+
     /**
      * Update file name if necessary
      */
@@ -81,7 +81,7 @@ define(function (require, exports, module) {
     }
 
     /**
-     * Check mouse entering/exiting the scale sticker. 
+     * Check mouse entering/exiting the scale sticker.
      * Hide it when entering and show it again when exiting.
      *
      * @param {number} offsetX mouse offset from the left of the previewing image
@@ -96,28 +96,28 @@ define(function (require, exports, module) {
             scaleDivTop,
             scaleDivRight,
             scaleDivBottom;
-        
+
         if (_scaleDivInfo) {
             scaleDivLeft   = _scaleDivInfo.left;
             scaleDivTop    = _scaleDivInfo.top;
             scaleDivRight  = _scaleDivInfo.right;
             scaleDivBottom = _scaleDivInfo.bottom;
-            
+
             if ((imgWidth + imagePos.left) < scaleDivRight) {
                 scaleDivRight = imgWidth + imagePos.left;
             }
-            
+
             if ((imgHeight + imagePos.top) < scaleDivBottom) {
                 scaleDivBottom = imgHeight + imagePos.top;
             }
-            
+
         } else {
             scaleDivLeft   = scaleDivPos.left;
             scaleDivTop    = scaleDivPos.top;
             scaleDivRight  = $("#img-scale").width() + scaleDivLeft;
             scaleDivBottom = $("#img-scale").height() + scaleDivTop;
         }
-        
+
         if (_scaleDivInfo) {
             // See whether the cursor is no longer inside the hidden scale div.
             // If so, show it again.
@@ -141,7 +141,7 @@ define(function (require, exports, module) {
             }
         }
     }
-    
+
     /**
      * Show image coordinates under the mouse cursor
      *
@@ -153,7 +153,7 @@ define(function (require, exports, module) {
         if (Math.floor(_scale) === 0) {
             return;
         }
-        
+
         var x                   = Math.round(e.offsetX * 100 / _scale),
             y                   = Math.round(e.offsetY * 100 / _scale),
             $target             = $(e.target),
@@ -172,8 +172,8 @@ define(function (require, exports, module) {
             tipOffsetX          = 10,     // adjustment for info div left from x coordinate of cursor
             tipOffsetY          = -54,    // adjustment for info div top from y coordinate of cursor
             tipMinusOffsetX1    = -82,    // for less than 4-digit image width
-            tipMinusOffsetX2    = -90;    // for 4-digit image width 
-        
+            tipMinusOffsetX2    = -90;    // for 4-digit image width
+
         // Adjust left, top, x and y based on which element contains the cursor.
         // Return if the target element is no longer available as in the case of
         // a vertical guide that has its left equals to zero.
@@ -213,14 +213,14 @@ define(function (require, exports, module) {
             // If we're in the scale sticker, then just return.
             return;
         }
-        
+
         // Check whether to show the image tip on the left.
         if ((e.pageX + infoWidth1) > windowWidth ||
                 (fourDigitImageWidth && (e.pageX + infoWidth2) > windowWidth)) {
             tipOffsetX = fourDigitImageWidth ? tipMinusOffsetX2 : tipMinusOffsetX1;
         }
-        
-        // For some reason we're getting -1 for e.offset when hovering over the very 
+
+        // For some reason we're getting -1 for e.offset when hovering over the very
         // first pixel of a scaled image. So adjust x to 0 if it is negative.
         if (x < 0) {
             x = 0;
@@ -233,20 +233,20 @@ define(function (require, exports, module) {
             left: left + tipOffsetX,
             top: top + tipOffsetY
         }).show();
-        
+
         $("#horiz-guide").css({
             left: imagePos.left,
             top: top,
             width: width - 1
         }).show();
-        
+
         $("#vert-guide").css({
             left: left,
             top: imagePos.top,
             height: height - 1
         }).show();
     }
-    
+
     /**
      * Show image coordinates under the mouse cursor
      *
@@ -260,7 +260,7 @@ define(function (require, exports, module) {
             bottom    = imagePos.top + $("#img-preview").height(),
             x         = targetPos.left + e.offsetX,
             y         = targetPos.top + e.offsetY;
-        
+
         // Hide image tip and guides only if the cursor is outside of the image.
         if (x < imagePos.left || x >= right ||
                 y < imagePos.top || y >= bottom) {
@@ -279,8 +279,8 @@ define(function (require, exports, module) {
         }
     }
 
-    
-    /** 
+
+    /**
      * sign off listeners when editor manager closes
      * the image viewer
      */
@@ -291,7 +291,7 @@ define(function (require, exports, module) {
                  .off("mouseleave", "#img-preview, #img-scale, #img-tip, .img-guide", _hideImageTip);
     }
 
-    /** 
+    /**
      * Perform decorations on the view that require loading the image in the browser,
      * i.e. getting actual and natural width and height andplacing the scale sticker
      * @param {!string} fullPath Path to the image file
@@ -306,7 +306,7 @@ define(function (require, exports, module) {
 
         _scale = 100;   // initialize to 100
         _scaleDivInfo = null;
-        
+
         $("#img-path").text(relPath)
                 .attr("title", relPath);
         $("#img-preview").on("load", function () {
@@ -332,10 +332,10 @@ define(function (require, exports, module) {
                 }
             });
             $("#image-holder").show();
-            
+
             // listen to resize to  update the scale sticker
             $(PanelManager).on("editorAreaResize", _onEditorAreaResize);
-            
+
             // make sure we always show the right file name
             $(DocumentManager).on("fileNameChange", _onFileNameChange);
 
@@ -348,7 +348,7 @@ define(function (require, exports, module) {
 
             minimumPixels = Math.floor(minimumPixels * 100 / _scale);
 
-            // If the image size is too narrow in width or height, then 
+            // If the image size is too narrow in width or height, then
             // show the crosshair cursor since guides are almost invisible
             // in narrow images.
             if (this.naturalWidth < minimumPixels || this.naturalHeight < minimumPixels) {
@@ -358,12 +358,34 @@ define(function (require, exports, module) {
         });
         return $customViewer;
     }
-    
+
+    /*
+     * Updates the URL with an ID tag at the end to force the file to be reloaded.
+     *
+     * This will is called by EditorManager when an file displayed by image viewer changes 
+     * on disk, to force a reload of a file.  
+     * CEF caches files loaded via the file-protocol and doesn't honor the 
+     * files modification date to determin wether it is stale.
+     */
+    function refresh() {
+        var noCacheUrl = $("#img-preview").attr("src"),
+            now = new Date().valueOf();
+
+        if (noCacheUrl.indexOf("#") > 0) {
+            noCacheUrl = noCacheUrl.replace(/#\d+/, "#" + now);
+        } else {
+            noCacheUrl = noCacheUrl + "#" + now;
+        }
+        $("#img-preview").attr("src", noCacheUrl);
+    }
+
     EditorManager.registerCustomViewer("image", {
         render: render,
-        onRemove: onRemove
+        onRemove: onRemove,
+        refresh: refresh
     });
-    
+
     exports.render              = render;
     exports.onRemove            = onRemove;
+    exports.refresh             = refresh;
 });
