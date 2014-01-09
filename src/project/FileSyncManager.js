@@ -459,7 +459,13 @@ define(function (require, exports, module) {
                 if (!err) {
                     // Does file's timestamp differ from last sync time on the Document?
                     if (stat.mtime.getTime() !== EditorManager.getCurrentlyViewedPathMTime()) {
-                        EditorManager.notifyPathDeleted(fullPath);
+                        EditorManager.refreshCustomViewer(fullPath);
+                        EditorManager._setCurrentlyViewedPath(fullPath);
+                        //EditorManager.notifyPathDeleted(fullPath);
+//                        CommandManager.execute(Commands.FILE_CLOSE).done(function () {
+//                            CommandManager.execute(Commands.FILE_OPEN, {fullPath: fullPath + "#!"});
+//                        });
+                       
                     }
                 } else {
                     // if we cannot stat the file we better close it.

@@ -359,11 +359,24 @@ define(function (require, exports, module) {
         return $customViewer;
     }
     
+    function refresh() {
+        var urlMod = $("#img-preview").attr("src");
+        
+        if (urlMod.indexOf("#") > 0) {
+            urlMod = urlMod.replace("#!", "");
+        } else {
+            urlMod = urlMod + "#!";
+        }
+        $("#img-preview").attr("src", urlMod);
+    }
+    
     EditorManager.registerCustomViewer("image", {
         render: render,
-        onRemove: onRemove
+        onRemove: onRemove,
+        refresh: refresh
     });
     
     exports.render              = render;
     exports.onRemove            = onRemove;
+    exports.refresh             = refresh;
 });
