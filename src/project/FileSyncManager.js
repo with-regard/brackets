@@ -450,7 +450,7 @@ define(function (require, exports, module) {
                 _alreadyChecking = false;
             });
 
-        // 6)
+        // 6) Handle custom viewer files: If a custom viewer is currently displaying a file, check if it has been updated or deleted
         var fullPath = EditorManager.getCurrentlyViewedPath();
         if (!DocumentManager.getCurrentDocument() && fullPath) {
             var file = FileSystem.getFileForPath(fullPath);
@@ -459,10 +459,12 @@ define(function (require, exports, module) {
                 if (!err) {
                     // Does file's timestamp differ from last sync time on the Document?
                     if (stat.mtime.getTime() !== EditorManager.getCurrentlyViewedFileMTime()) {
-                        //EditorManager._setCurrentlyViewedPath(fullPath);
-                        //EditorManager.notifyPathDeleted(fullPath);
+                        // Then close and reopen.
                         CommandManager.execute(Commands.FILE_CLOSE).done(function () {
                             CommandManager.execute(Commands.FILE_OPEN, {fullPath: fullPath}).done(function () {
+                                // CEF caches files loaded via the file-protocol but doesn't honor
+                                // its timestamp to purge the cache. 
+                                // Hence tell the custom viewer to refresh
                                 EditorManager.refreshCustomViewer(fullPath);
                             });
                         });

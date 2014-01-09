@@ -76,12 +76,6 @@ define(function (require, exports, module) {
     var _currentlyViewedPath = null;
     /** @type {?Date} modification time of file */
     var _currentlyViewedFileMTime = null;
-
-    // TODO bundle _currentlyViewedPath, _currentlyViewedFileMTime and _currentlyViewedFileMSize
-    // creare file stat struct in DCH in open CMD and pass to EM
-    // into file stat structure and implement single getter and comparatorFnc for FileSyncM.
-    // FileStat struct can be passed to custom viewer to simplifx render / avoid asynch stat call.
-
     /** @type {?JQuery} DOM node representing UI of custom view   */
     var _$currentCustomViewer = null;
     /** @type {?Object} view provider */
@@ -619,11 +613,19 @@ define(function (require, exports, module) {
         $("#not-editor").css("display", "");
         _nullifyEditor();
     }
-
+    
+    /**
+     * returns the full path to the file currently in view, i.e. a text doc in an editor
+     * or a file in a custom viewer, i.e. an image.
+     */
     function getCurrentlyViewedPath() {
         return _currentlyViewedPath;
     }
 
+    /**
+     * returns the the modification time stamp on disk of the file currently in view, 
+     * i.e. a text doc in an editor or a file in a custom viewer, i.e. an image.
+     */
     function getCurrentlyViewedFileMTime() {
         return _currentlyViewedFileMTime;
     }
@@ -638,25 +640,27 @@ define(function (require, exports, module) {
 
     function _setCurrentlyViewedPath(fullPath, mtime) {
 
-        if (fullPath && mtime) {
-            _currentlyViewedPath = fullPath;
-            // if this was invoked form an document open command we do have the modification timestamp
-            // and can synchronously save the value
-            _currentlyViewedFileMTime = mtime;
-            $(exports).triggerHandler("currentlyViewedFileChange");
-        } else if (fullPath && !mtime) {
-            _currentlyViewedPath = fullPath;
-            // if this was invoked form an document open command we do have the modification timestamp
-            // and can synchronously save the value
-            var file = FileSystem.getFileForPath(fullPath);
-            file.stat(function (fileError, stat) {
-                if (!fileError) {
-                    _currentlyViewedFileMTime = stat.mtime.getTime();
-                    $(exports).triggerHandler("currentlyViewedFileChange");
-                } else {
-                    notifyPathDeleted(fullPath);
-                }
-            });
+        if (fullPath) {
+            if (mtime) {
+                _currentlyViewedPath = fullPath;
+                // if this was invoked form an document open command we do have the modification timestamp
+                // and can synchronously save the value
+                _currentlyViewedFileMTime = mtime;
+                $(exports).triggerHandler("currentlyViewedFileChange");
+            } else {
+                _currentlyViewedPath = fullPath;
+                // if this was invoked without the modification time
+                // we will fetch the timestamp asynchrmously
+                var file = FileSystem.getFileForPath(fullPath);
+                file.stat(function (fileError, stat) {
+                    if (!fileError) {
+                        _currentlyViewedFileMTime = stat.mtime.getTime();
+                        $(exports).triggerHandler("currentlyViewedFileChange");
+                    } else {
+                        notifyPathDeleted(fullPath);
+                    }
+                });
+            }
         } else {
             // if fullpath is not defined reset path and timestamp
             _currentlyViewedPath = null;
@@ -742,6 +746,9 @@ define(function (require, exports, module) {
      * - onRemove
      *      signs off listeners and performs any required clean up when editor manager closes
      *      the custom viewer
+     * - refresh (optional)
+     *      notifies a custom viewer of a timstamp
+     *      change of a file in view in a custom viewer
      *
      * By registering a CustomViewer with EditorManager  Brackets is
      * enabled to view files for one or more given file extensions.
@@ -785,7 +792,15 @@ define(function (require, exports, module) {
         return _customViewerRegistry[lang.getId()];
     }
 
-    // TODO write docs
+    /**
+     * Calls refresh on custom viewer if the custom viewer implements it.
+     * This will happen when a file displayed by a custom viewer changes 
+     * on disk, to allow the custom viewer to force a reload of a file.  
+     * CEF caches files loaded via the file-protocol and doesn't honor the 
+     * files modification date to determin wether it is stale.
+     *
+     * @param {!string} fullPath - path to file to be refreshed by custom viewer     
+     */
     function refreshCustomViewer(fullPath) {
         var customViewer = getCustomViewerForPath(fullPath);
         if (customViewer.refresh) {
