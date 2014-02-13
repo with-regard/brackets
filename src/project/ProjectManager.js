@@ -1101,6 +1101,7 @@ define(function (require, exports, module) {
                         resultRenderTree.always(function () {
                             if (projectRootChanged) {
                                 // Allow asynchronous event handlers to finish before resolving result by collecting promises from them
+                                PreferencesManager.projectLayer.setProjectPath(_projectRoot ? _projectRoot.fullPath : null);
                                 var promises = [];
                                 $(exports).triggerHandler({ type: "projectOpen", promises: promises }, [_projectRoot]);
                                 $.when.apply($, promises).then(result.resolve, result.reject);
