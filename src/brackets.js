@@ -194,6 +194,7 @@ define(function (require, exports, module) {
 
         AppInit.appReady(function () {
             brackets.test.doneLoading = true;
+            console.log(PerfUtils.getAnalyticsData());
         });
     }
             
@@ -231,6 +232,17 @@ define(function (require, exports, module) {
             // Load all extensions. This promise will complete even if one or more
             // extensions fail to load.
             var extensionPathOverride = params.get("extensions");  // used by unit tests
+            
+            $(ExtensionLoader).on("load", function(mod, filePath){
+                console.log(filePath);
+            });
+            
+            $(ExtensionLoader).on("loadFailed", function(mod, filePath){
+                console.log("loadFailed " + filePath);
+            });
+            
+           
+            
             var extensionLoaderPromise = ExtensionLoader.init(extensionPathOverride ? extensionPathOverride.split(",") : null);
             
             // Load the initial project after extensions have loaded

@@ -42,6 +42,7 @@ define(function (require, exports, module) {
     var _           = require("thirdparty/lodash"),
         FileSystem  = require("filesystem/FileSystem"),
         FileUtils   = require("file/FileUtils"),
+        PerfUtils   = require("utils/PerfUtils"),
         Async       = require("utils/Async"),
         UrlParams   = require("utils/UrlParams").UrlParams;
 
@@ -152,6 +153,8 @@ define(function (require, exports, module) {
      *              (Note: if extension contains a JS syntax error, promise is resolved not rejected).
      */
     function loadExtension(name, config, entryPoint) {
+        PerfUtils.markStart(name);
+                            
         var extensionConfig = {
             context: name,
             baseUrl: config.baseUrl,
@@ -215,7 +218,10 @@ define(function (require, exports, module) {
             $(exports).triggerHandler("load", config.baseUrl);
         }, function (err) {
             $(exports).triggerHandler("loadFailed", config.baseUrl);
+        }).always(function(){
+            PerfUtils.addAnalyticsMeasurement(name);
         });
+        
         
         return promise;
     }
