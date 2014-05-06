@@ -153,7 +153,7 @@ define(function (require, exports, module) {
      *              (Note: if extension contains a JS syntax error, promise is resolved not rejected).
      */
     function loadExtension(name, config, entryPoint) {
-        PerfUtils.markStart(name);
+        PerfUtils.markAnalyticsStart(name);
                             
         var extensionConfig = {
             context: name,

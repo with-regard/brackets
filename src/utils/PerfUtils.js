@@ -153,6 +153,10 @@ define(function (require, exports, module) {
         return name;
     }
     
+    function markAnalyticsStart(name){
+        markStart("analytics: " + name);
+    }
+    
     /**
      * Stop a timer and add its measurements to the performance data.
      *
@@ -371,6 +375,7 @@ define(function (require, exports, module) {
     exports.finalizeMeasurement     = finalizeMeasurement;
     exports.isActive                = isActive;
     exports.markStart               = markStart;
+	exports.markAnalyticsStart      = markAnalyticsStart;
     exports.getData                 = getData;
     exports.searchData              = searchData;
     exports.updateMeasurement       = updateMeasurement;
