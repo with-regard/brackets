@@ -39,14 +39,18 @@
 define(function (require, exports, module) {
     "use strict";
     
-    var _                = require("thirdparty/lodash"),
+    var _                = require("thirdparty/lodash"),        
         FileUtils        = require("file/FileUtils"),
         Package          = require("extensibility/Package"),
         Async            = require("utils/Async"),
         ExtensionLoader  = require("utils/ExtensionLoader"),
         FileSystem       = require("filesystem/FileSystem"),
         Strings          = require("strings"),
-        StringUtils      = require("utils/StringUtils");
+        StringUtils      = require("utils/StringUtils"),
+        Regard           = require("thirdparty/regard-client");
+    
+    Regard.setRegardURL("https://api.withregard.io/track/v1/Adobe/Brackets/event");
+    Regard.setUserId("F16CB994-00FF-4326-B0DB-F316F7EC2942");
     
     // semver.browser is an AMD-compatible module
     var semver = require("extensibility/node/node_modules/semver/semver.browser");
@@ -244,6 +248,12 @@ define(function (require, exports, module) {
                 locationType: locationType,
                 status: (e.type === "loadFailed" ? START_FAILED : ENABLED)
             };
+            
+            Regard.trackEvent("extension.loaded", {
+                                "extension.name" : id,
+                                "extension.status" : extensions[id].installInfo.status
+                              }).then(function(e){console.log(e)});
+            
             synchronizeEntry(id);
             $(exports).triggerHandler("statusChange", [id]);
         }
