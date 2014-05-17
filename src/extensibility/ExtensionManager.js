@@ -39,22 +39,21 @@
 define(function (require, exports, module) {
     "use strict";
     
-    var _                = require("thirdparty/lodash"),        
-        FileUtils        = require("file/FileUtils"),
-        Package          = require("extensibility/Package"),
-        Async            = require("utils/Async"),
-        ExtensionLoader  = require("utils/ExtensionLoader"),
-        FileSystem       = require("filesystem/FileSystem"),
-        Strings          = require("strings"),
-        StringUtils      = require("utils/StringUtils"),
-        Regard           = require("thirdparty/regard-client");
+    var _                   = require("thirdparty/lodash"),  
+        PreferencesManager  = require("preferences/PreferencesManager"),
+        FileUtils           = require("file/FileUtils"),
+        Package             = require("extensibility/Package"),
+        Async               = require("utils/Async"),
+        ExtensionLoader     = require("utils/ExtensionLoader"),
+        FileSystem          = require("filesystem/FileSystem"),
+        Strings             = require("strings"),
+        StringUtils         = require("utils/StringUtils"),
+        Regard              = require("thirdparty/regard");
     
-    Regard.setRegardURL("https://api.withregard.io/track/v1/Adobe/Brackets/event");
-    Regard.setUserId("F16CB994-00FF-4326-B0DB-F316F7EC2942");
     
     // semver.browser is an AMD-compatible module
     var semver = require("extensibility/node/node_modules/semver/semver.browser");
-    
+    var _regardInitialized = false;
     /**
      * Extension status constants.
      */
@@ -93,6 +92,30 @@ define(function (require, exports, module) {
     var _idsToRemove = [],
         _idsToUpdate = [];
         
+    function _initializeRegardAnalytics(){
+        if(_regardInitialized){
+            return true;
+        }
+        
+        PreferencesManager.definePreference("regardUser", "string", "");
+        var regardUser = PreferencesManager.get("regardUser", "user");
+    
+        if(regardUser === ""){
+           var result= PreferencesManager.set("regardUser", Regard.createNewUser(), { context: "user", location : { scope: "user" } });
+        }
+        else{
+            Regard.setUserId(regardUser);
+        }
+    
+        Regard.startNewSession();
+        Regard.setRegardURL("https://api.withregard.io/track/v1/Adobe/Brackets/event");
+        
+        _regardInitialized = true;
+        return true;
+    }
+    
+    
+    
     /**
      * @private
      * Synchronizes the information between the public registry and the installed
@@ -248,6 +271,8 @@ define(function (require, exports, module) {
                 locationType: locationType,
                 status: (e.type === "loadFailed" ? START_FAILED : ENABLED)
             };
+            
+            _initializeRegardAnalytics();
             
             Regard.trackEvent("extension.loaded", {
                                 "extension.name" : id,
