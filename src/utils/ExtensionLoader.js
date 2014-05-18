@@ -153,7 +153,7 @@ define(function (require, exports, module) {
      *              (Note: if extension contains a JS syntax error, promise is resolved not rejected).
      */
     function loadExtension(name, config, entryPoint) {
-        PerfUtils.markAnalyticsStart(name);
+        PerfUtils.markStart(name);
                             
         var extensionConfig = {
             context: name,
@@ -215,11 +215,11 @@ define(function (require, exports, module) {
                 console.log(err.stack);
             }
         }).then(function () {
-            $(exports).triggerHandler("load", config.baseUrl);
+            PerfUtils.addMeasurement(name);
+            $(exports).triggerHandler("load", { url: config.baseUrl, loadTime : PerfUtils.getData(name)});
         }, function (err) {
-            $(exports).triggerHandler("loadFailed", config.baseUrl);
-        }).always(function(){
-            PerfUtils.addAnalyticsMeasurement(name);
+            PerfUtils.addMeasurement(name);
+            $(exports).triggerHandler("loadFailed", { url: config.baseUrl, loadTime : PerfUtils.getData(name)});
         });
         
         

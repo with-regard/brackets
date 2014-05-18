@@ -243,7 +243,9 @@ define(function (require, exports, module) {
      * @param {$.Event} e The event object
      * @param {string} path The local path of the loaded extension's folder.
      */
-    function _handleExtensionLoad(e, path) {
+    function _handleExtensionLoad(e, info) {
+        var path = info.url;
+        
         function setData(id, metadata) {
             var locationType,
                 userExtensionPath = ExtensionLoader.getUserExtensionPath();
@@ -276,7 +278,8 @@ define(function (require, exports, module) {
             
             Regard.trackEvent("extension.loaded", {
                                 "extension.name" : id,
-                                "extension.status" : extensions[id].installInfo.status
+                                "extension.status" : extensions[id].installInfo.status,
+                                "extension.loadTime" : info.loadTime
                               }).then(function(e){console.log(e)});
             
             synchronizeEntry(id);

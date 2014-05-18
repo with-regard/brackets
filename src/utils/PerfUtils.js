@@ -153,9 +153,6 @@ define(function (require, exports, module) {
         return name;
     }
     
-    function markAnalyticsStart(name){
-        markStart("analytics: " + name);
-    }
     
     /**
      * Stop a timer and add its measurements to the performance data.
@@ -197,9 +194,6 @@ define(function (require, exports, module) {
         //console.log(name + " " + elapsedTime);
     }
     
-    function addAnalyticsMeasurement(name) {
-        addMeasurement("analytics: " + name);
-    }
 
     /**
      * This function is similar to addMeasurement(), but it allows timing the
@@ -315,19 +309,7 @@ define(function (require, exports, module) {
 
         return result;
     }
-    
-    function getAnalyticsData() {
-        var result = "";
         
-        _.forEach(perfData, function (entry, testName) {
-            if(testName.indexOf("analytics") == 0){
-                result += entry + "\t" + testName + "\n";
-            }
-        });
-        
-        return result;
-    }
-    
     /**
      * Returns the measured value for the given measurement name.
      * @param {string|PerfMeasurement} name The measurement to retreive.
@@ -370,12 +352,9 @@ define(function (require, exports, module) {
     // extensions may create additional measurement constants during their lifecycle
 
     exports.addMeasurement          = addMeasurement;
-    exports.addAnalyticsMeasurement = addAnalyticsMeasurement;
-    exports.getAnalyticsData        = getAnalyticsData;
     exports.finalizeMeasurement     = finalizeMeasurement;
     exports.isActive                = isActive;
     exports.markStart               = markStart;
-	exports.markAnalyticsStart      = markAnalyticsStart;
     exports.getData                 = getData;
     exports.searchData              = searchData;
     exports.updateMeasurement       = updateMeasurement;
