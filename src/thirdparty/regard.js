@@ -1,6 +1,6 @@
-require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"Focm2+":[function(require,module,exports){
-  var moment = require("moment");
-  var rsvp = require("rsvp");
+!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.regardClient=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
+  var moment = _dereq_("moment");
+  var rsvp = _dereq_("rsvp");
   
   var _createGuid = function(){
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -105,9 +105,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
   module.exports.setUserId = function(userId) { _userId = userId; };
   module.exports.getUserId = function(){ return _userId };
   module.exports.getSessionId = function(){ return _sessionId; };
-},{"moment":4,"rsvp":5}],"regard":[function(require,module,exports){
-module.exports=require('Focm2+');
-},{}],3:[function(require,module,exports){
+},{"moment":3,"rsvp":4}],2:[function(_dereq_,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -172,7 +170,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],4:[function(require,module,exports){
+},{}],3:[function(_dereq_,module,exports){
 (function (global){
 //! moment.js
 //! version : 2.6.0
@@ -1025,7 +1023,7 @@ process.chdir = function (dir) {
             get = function (k) {
                 if (!languages[k] && hasModule) {
                     try {
-                        require('./lang/' + k);
+                        _dereq_('./lang/' + k);
                     } catch (e) { }
                 }
                 return languages[k];
@@ -2650,7 +2648,7 @@ process.chdir = function (dir) {
     if (hasModule) {
         module.exports = moment;
     } else if (typeof define === "function" && define.amd) {
-        define("moment", function (require, exports, module) {
+        define("moment", function (_dereq_, exports, module) {
             if (module.config && module.config() && module.config().noGlobal === true) {
                 // release the global variable
                 globalScope.moment = oldGlobalMoment;
@@ -2665,25 +2663,25 @@ process.chdir = function (dir) {
 }).call(this);
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],5:[function(require,module,exports){
+},{}],4:[function(_dereq_,module,exports){
 "use strict";
-var Promise = require("./rsvp/promise")["default"];
-var EventTarget = require("./rsvp/events")["default"];
-var denodeify = require("./rsvp/node")["default"];
-var all = require("./rsvp/all")["default"];
-var allSettled = require("./rsvp/all-settled")["default"];
-var race = require("./rsvp/race")["default"];
-var hash = require("./rsvp/hash")["default"];
-var hashSettled = require("./rsvp/hash-settled")["default"];
-var rethrow = require("./rsvp/rethrow")["default"];
-var defer = require("./rsvp/defer")["default"];
-var config = require("./rsvp/config").config;
-var configure = require("./rsvp/config").configure;
-var map = require("./rsvp/map")["default"];
-var resolve = require("./rsvp/resolve")["default"];
-var reject = require("./rsvp/reject")["default"];
-var filter = require("./rsvp/filter")["default"];
-var asap = require("./rsvp/asap")["default"];
+var Promise = _dereq_("./rsvp/promise")["default"];
+var EventTarget = _dereq_("./rsvp/events")["default"];
+var denodeify = _dereq_("./rsvp/node")["default"];
+var all = _dereq_("./rsvp/all")["default"];
+var allSettled = _dereq_("./rsvp/all-settled")["default"];
+var race = _dereq_("./rsvp/race")["default"];
+var hash = _dereq_("./rsvp/hash")["default"];
+var hashSettled = _dereq_("./rsvp/hash-settled")["default"];
+var rethrow = _dereq_("./rsvp/rethrow")["default"];
+var defer = _dereq_("./rsvp/defer")["default"];
+var config = _dereq_("./rsvp/config").config;
+var configure = _dereq_("./rsvp/config").configure;
+var map = _dereq_("./rsvp/map")["default"];
+var resolve = _dereq_("./rsvp/resolve")["default"];
+var reject = _dereq_("./rsvp/reject")["default"];
+var filter = _dereq_("./rsvp/filter")["default"];
+var asap = _dereq_("./rsvp/asap")["default"];
 
 config.async = asap; // default async is asap;
 
@@ -2728,11 +2726,11 @@ exports.reject = reject;
 exports.async = async;
 exports.map = map;
 exports.filter = filter;
-},{"./rsvp/all":7,"./rsvp/all-settled":6,"./rsvp/asap":8,"./rsvp/config":9,"./rsvp/defer":10,"./rsvp/events":11,"./rsvp/filter":12,"./rsvp/hash":14,"./rsvp/hash-settled":13,"./rsvp/map":16,"./rsvp/node":17,"./rsvp/promise":18,"./rsvp/race":24,"./rsvp/reject":25,"./rsvp/resolve":26,"./rsvp/rethrow":27}],6:[function(require,module,exports){
+},{"./rsvp/all":6,"./rsvp/all-settled":5,"./rsvp/asap":7,"./rsvp/config":8,"./rsvp/defer":9,"./rsvp/events":10,"./rsvp/filter":11,"./rsvp/hash":13,"./rsvp/hash-settled":12,"./rsvp/map":15,"./rsvp/node":16,"./rsvp/promise":17,"./rsvp/race":23,"./rsvp/reject":24,"./rsvp/resolve":25,"./rsvp/rethrow":26}],5:[function(_dereq_,module,exports){
 'use strict';
-var Promise = require('./promise')['default'];
-var isArray = require('./utils').isArray;
-var isNonThenable = require('./utils').isNonThenable;
+var Promise = _dereq_('./promise')['default'];
+var isArray = _dereq_('./utils').isArray;
+var isNonThenable = _dereq_('./utils').isNonThenable;
 /**
   `RSVP.allSettled` is similar to `RSVP.all`, but instead of implementing
   a fail-fast method, it waits until all the promises have returned and
@@ -2834,9 +2832,9 @@ function rejected(reason) {
         reason: reason
     };
 }
-},{"./promise":18,"./utils":28}],7:[function(require,module,exports){
+},{"./promise":17,"./utils":27}],6:[function(_dereq_,module,exports){
 'use strict';
-var Promise = require('./promise')['default'];
+var Promise = _dereq_('./promise')['default'];
 /**
   This is a convenient alias for `RSVP.Promise.all`.
 
@@ -2850,7 +2848,7 @@ var Promise = require('./promise')['default'];
 exports['default'] = function all(array, label) {
     return Promise.all(array, label);
 };
-},{"./promise":18}],8:[function(require,module,exports){
+},{"./promise":17}],7:[function(_dereq_,module,exports){
 (function (process){
 'use strict';
 exports['default'] = function asap(callback, arg) {
@@ -2905,10 +2903,10 @@ if (typeof process !== 'undefined' && {}.toString.call(process) === '[object pro
 } else {
     scheduleFlush = useSetTimeout();
 }
-}).call(this,require("Zbi7gb"))
-},{"Zbi7gb":3}],9:[function(require,module,exports){
+}).call(this,_dereq_("Zbi7gb"))
+},{"Zbi7gb":2}],8:[function(_dereq_,module,exports){
 'use strict';
-var EventTarget = require('./events')['default'];
+var EventTarget = _dereq_('./events')['default'];
 var config = { instrument: false };
 EventTarget.mixin(config);
 function configure(name, value) {
@@ -2927,9 +2925,9 @@ function configure(name, value) {
 }
 exports.config = config;
 exports.configure = configure;
-},{"./events":11}],10:[function(require,module,exports){
+},{"./events":10}],9:[function(_dereq_,module,exports){
 'use strict';
-var Promise = require('./promise')['default'];
+var Promise = _dereq_('./promise')['default'];
 /**
   `RSVP.defer` returns an object similar to jQuery's `$.Deferred`.
   `RSVP.defer` should be used when porting over code reliant on `$.Deferred`'s
@@ -2970,7 +2968,7 @@ exports['default'] = function defer(label) {
     }, label);
     return deferred;
 };
-},{"./promise":18}],11:[function(require,module,exports){
+},{"./promise":17}],10:[function(_dereq_,module,exports){
 'use strict';
 function indexOf(callbacks, callback) {
     for (var i = 0, l = callbacks.length; i < l; i++) {
@@ -3031,10 +3029,10 @@ exports['default'] = {
         }
     }
 };
-},{}],12:[function(require,module,exports){
+},{}],11:[function(_dereq_,module,exports){
 'use strict';
-var Promise = require('./promise')['default'];
-var isFunction = require('./utils').isFunction;
+var Promise = _dereq_('./promise')['default'];
+var isFunction = _dereq_('./utils').isFunction;
 /**
  `RSVP.filter` is similar to JavaScript's native `filter` method, except that it
   waits for all promises to become fulfilled before running the `filterFn` on
@@ -3142,11 +3140,11 @@ exports['default'] = function filter(promises, filterFn, label) {
         });
     });
 };
-},{"./promise":18,"./utils":28}],13:[function(require,module,exports){
+},{"./promise":17,"./utils":27}],12:[function(_dereq_,module,exports){
 'use strict';
-var Promise = require('./promise')['default'];
-var isNonThenable = require('./utils').isNonThenable;
-var keysOf = require('./utils').keysOf;
+var Promise = _dereq_('./promise')['default'];
+var isNonThenable = _dereq_('./utils').isNonThenable;
+var keysOf = _dereq_('./utils').keysOf;
 /**
   `RSVP.hashSettled` is similar to `RSVP.allSettled`, but takes an object
   instead of an array for its `promises` argument.
@@ -3297,11 +3295,11 @@ function rejected(reason) {
         reason: reason
     };
 }
-},{"./promise":18,"./utils":28}],14:[function(require,module,exports){
+},{"./promise":17,"./utils":27}],13:[function(_dereq_,module,exports){
 'use strict';
-var Promise = require('./promise')['default'];
-var isNonThenable = require('./utils').isNonThenable;
-var keysOf = require('./utils').keysOf;
+var Promise = _dereq_('./promise')['default'];
+var isNonThenable = _dereq_('./utils').isNonThenable;
+var keysOf = _dereq_('./utils').keysOf;
 /**
   `RSVP.hash` is similar to `RSVP.all`, but takes an object instead of an array
   for its `promises` argument.
@@ -3426,10 +3424,10 @@ exports['default'] = function hash(object, label) {
         }
     });
 };
-},{"./promise":18,"./utils":28}],15:[function(require,module,exports){
+},{"./promise":17,"./utils":27}],14:[function(_dereq_,module,exports){
 'use strict';
-var config = require('./config').config;
-var now = require('./utils').now;
+var config = _dereq_('./config').config;
+var now = _dereq_('./utils').now;
 exports['default'] = function instrument(eventName, promise, child) {
     // instrumentation should not disrupt normal usage.
     try {
@@ -3448,11 +3446,11 @@ exports['default'] = function instrument(eventName, promise, child) {
         }, 0);
     }
 };
-},{"./config":9,"./utils":28}],16:[function(require,module,exports){
+},{"./config":8,"./utils":27}],15:[function(_dereq_,module,exports){
 'use strict';
-var Promise = require('./promise')['default'];
-var isArray = require('./utils').isArray;
-var isFunction = require('./utils').isFunction;
+var Promise = _dereq_('./promise')['default'];
+var isArray = _dereq_('./utils').isArray;
+var isFunction = _dereq_('./utils').isFunction;
 /**
  `RSVP.map` is similar to JavaScript's native `map` method, except that it
   waits for all promises to become fulfilled before running the `mapFn` on
@@ -3544,11 +3542,11 @@ exports['default'] = function map(promises, mapFn, label) {
         return Promise.all(results, label);
     });
 };
-},{"./promise":18,"./utils":28}],17:[function(require,module,exports){
+},{"./promise":17,"./utils":27}],16:[function(_dereq_,module,exports){
 'use strict';
 /* global  arraySlice */
-var Promise = require('./promise')['default'];
-var isArray = require('./utils').isArray;
+var Promise = _dereq_('./promise')['default'];
+var isArray = _dereq_('./utils').isArray;
 /**
   `RSVP.denodeify` takes a "node-style" function and returns a function that
   will return an `RSVP.Promise`. You can use `denodeify` in Node.js or the
@@ -3732,19 +3730,19 @@ exports['default'] = function denodeify(nodeFunc, argumentNames) {
     denodeifiedFunction.__proto__ = nodeFunc;
     return denodeifiedFunction;
 };
-},{"./promise":18,"./utils":28}],18:[function(require,module,exports){
+},{"./promise":17,"./utils":27}],17:[function(_dereq_,module,exports){
 'use strict';
-var config = require('./config').config;
-var EventTarget = require('./events')['default'];
-var instrument = require('./instrument')['default'];
-var objectOrFunction = require('./utils').objectOrFunction;
-var isFunction = require('./utils').isFunction;
-var now = require('./utils').now;
-var cast = require('./promise/cast')['default'];
-var all = require('./promise/all')['default'];
-var race = require('./promise/race')['default'];
-var Resolve = require('./promise/resolve')['default'];
-var Reject = require('./promise/reject')['default'];
+var config = _dereq_('./config').config;
+var EventTarget = _dereq_('./events')['default'];
+var instrument = _dereq_('./instrument')['default'];
+var objectOrFunction = _dereq_('./utils').objectOrFunction;
+var isFunction = _dereq_('./utils').isFunction;
+var now = _dereq_('./utils').now;
+var cast = _dereq_('./promise/cast')['default'];
+var all = _dereq_('./promise/all')['default'];
+var race = _dereq_('./promise/race')['default'];
+var Resolve = _dereq_('./promise/resolve')['default'];
+var Reject = _dereq_('./promise/reject')['default'];
 var guidKey = 'rsvp_' + now() + '-';
 var counter = 0;
 function noop() {
@@ -4052,10 +4050,10 @@ function publishRejection(promise) {
     }
     publish(promise, promise._state = REJECTED);
 }
-},{"./config":9,"./events":11,"./instrument":15,"./promise/all":19,"./promise/cast":20,"./promise/race":21,"./promise/reject":22,"./promise/resolve":23,"./utils":28}],19:[function(require,module,exports){
+},{"./config":8,"./events":10,"./instrument":14,"./promise/all":18,"./promise/cast":19,"./promise/race":20,"./promise/reject":21,"./promise/resolve":22,"./utils":27}],18:[function(_dereq_,module,exports){
 'use strict';
-var isArray = require('../utils').isArray;
-var isNonThenable = require('../utils').isNonThenable;
+var isArray = _dereq_('../utils').isArray;
+var isNonThenable = _dereq_('../utils').isNonThenable;
 /**
   `RSVP.Promise.all` accepts an array of promises, and returns a new promise which
   is fulfilled with an array of fulfillment values for the passed promises, or
@@ -4142,7 +4140,7 @@ exports['default'] = function all(entries, label) {
         }
     }, label);
 };
-},{"../utils":28}],20:[function(require,module,exports){
+},{"../utils":27}],19:[function(_dereq_,module,exports){
 'use strict';
 /**
   @deprecated
@@ -4222,12 +4220,12 @@ exports['default'] = function cast(object, label) {
         resolve(object);
     }, label);
 };
-},{}],21:[function(require,module,exports){
+},{}],20:[function(_dereq_,module,exports){
 'use strict';
 /* global toString */
-var isArray = require('../utils').isArray;
-var isFunction = require('../utils').isFunction;
-var isNonThenable = require('../utils').isNonThenable;
+var isArray = _dereq_('../utils').isArray;
+var isFunction = _dereq_('../utils').isFunction;
+var isNonThenable = _dereq_('../utils').isNonThenable;
 /**
   `RSVP.Promise.race` returns a new promise which is settled in the same way as the
   first passed promise to settle.
@@ -4326,7 +4324,7 @@ exports['default'] = function race(entries, label) {
         }
     }, label);
 };
-},{"../utils":28}],22:[function(require,module,exports){
+},{"../utils":27}],21:[function(_dereq_,module,exports){
 'use strict';
 /**
   `RSVP.Promise.reject` returns a promise rejected with the passed `reason`.
@@ -4370,7 +4368,7 @@ exports['default'] = function reject(reason, label) {
         reject$2(reason);
     }, label);
 };
-},{}],23:[function(require,module,exports){
+},{}],22:[function(_dereq_,module,exports){
 'use strict';
 /**
   `RSVP.Promise.resolve` returns a promise that will become resolved with the
@@ -4414,9 +4412,9 @@ exports['default'] = function resolve(object, label) {
         resolve$2(object);
     }, label);
 };
-},{}],24:[function(require,module,exports){
+},{}],23:[function(_dereq_,module,exports){
 'use strict';
-var Promise = require('./promise')['default'];
+var Promise = _dereq_('./promise')['default'];
 /**
   This is a convenient alias for `RSVP.Promise.race`.
 
@@ -4430,9 +4428,9 @@ var Promise = require('./promise')['default'];
 exports['default'] = function race(array, label) {
     return Promise.race(array, label);
 };
-},{"./promise":18}],25:[function(require,module,exports){
+},{"./promise":17}],24:[function(_dereq_,module,exports){
 'use strict';
-var Promise = require('./promise')['default'];
+var Promise = _dereq_('./promise')['default'];
 /**
   This is a convenient alias for `RSVP.Promise.reject`.
 
@@ -4447,9 +4445,9 @@ var Promise = require('./promise')['default'];
 exports['default'] = function reject(reason, label) {
     return Promise.reject(reason, label);
 };
-},{"./promise":18}],26:[function(require,module,exports){
+},{"./promise":17}],25:[function(_dereq_,module,exports){
 'use strict';
-var Promise = require('./promise')['default'];
+var Promise = _dereq_('./promise')['default'];
 /**
   This is a convenient alias for `RSVP.Promise.resolve`.
 
@@ -4465,7 +4463,7 @@ var Promise = require('./promise')['default'];
 exports['default'] = function resolve(value, label) {
     return Promise.resolve(value, label);
 };
-},{"./promise":18}],27:[function(require,module,exports){
+},{"./promise":17}],26:[function(_dereq_,module,exports){
 'use strict';
 /**
   `RSVP.rethrow` will rethrow an error on the next turn of the JavaScript event
@@ -4513,7 +4511,7 @@ exports['default'] = function rethrow(reason) {
     });
     throw reason;
 };
-},{}],28:[function(require,module,exports){
+},{}],27:[function(_dereq_,module,exports){
 'use strict';
 function objectOrFunction(x) {
     return typeof x === 'function' || typeof x === 'object' && x !== null;
@@ -4551,4 +4549,6 @@ var keysOf = Object.keys || function (object) {
         return result;
     };
 exports.keysOf = keysOf;
-},{}]},{},["Focm2+"])
+},{}]},{},[1])
+(1)
+});
