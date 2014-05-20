@@ -94,24 +94,22 @@ define(function (require, exports, module) {
         
     function _initializeRegardAnalytics(){
         if(_regardInitialized){
-            return true;
+            return;
         }
         
         PreferencesManager.definePreference("regardUser", "string", "");
         var regardUser = PreferencesManager.get("regardUser", "user");
     
         if(regardUser === ""){
-           var result= PreferencesManager.set("regardUser", Regard.createNewUser(), { context: "user", location : { scope: "user" } });
+           var result= PreferencesManager.set("regardUser", Regard.getUserId(), { context: "user", location : { scope: "user" } });
         }
         else{
             Regard.setUserId(regardUser);
         }
-    
-        Regard.startNewSession();
+
         Regard.setRegardURL("https://api.withregard.io/track/v1/Adobe/Brackets/event");
         
         _regardInitialized = true;
-        return true;
     }
     
     
@@ -274,16 +272,10 @@ define(function (require, exports, module) {
                 status: (e.type === "loadFailed" ? START_FAILED : ENABLED)
             };
             
-            _initializeRegardAnalytics();
-            
-            Regard.trackEvent("extension.loaded", {
-                                "extension.name" : id,
-                                "extension.status" : extensions[id].installInfo.status,
-                                "extension.loadTime" : info.loadTime
-                              }).then(function(e){console.log(e)});
-            
             synchronizeEntry(id);
             $(exports).triggerHandler("statusChange", [id]);
+            
+            _trackExtensionLoadEvent(id, extensions[id], info.loadTime);
         }
         
         _loadPackageJson(path)
@@ -302,6 +294,18 @@ define(function (require, exports, module) {
             });
     }
         
+    function _trackExtensionLoadEvent(id, extension, loadTime){
+         _initializeRegardAnalytics();
+            
+         Regard.trackEvent("extension.loaded", {
+                                "extension.name" : id,
+                                "extension.status" : extension.installInfo.status,
+                                "extension.load_time" : loadTime,
+                                "extension.version" : extension.installInfo.metadata.version
+                              }).then(function(e){console.log(e)});
+    }
+
+    
     /**
      * Determines if the given versions[] entry is compatible with the given Brackets API version, and if not
      * specifies why.
