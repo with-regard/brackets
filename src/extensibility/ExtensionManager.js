@@ -298,7 +298,7 @@ define(function (require, exports, module) {
          _initializeRegardAnalytics();
             
          Regard.trackEvent("extension.loaded", {
-                                "extension.name" : id,
+                                "extension.name" : extension.installInfo.metadata.title || id,
                                 "extension.status" : extension.installInfo.status,
                                 "extension.load_time" : loadTime,
                                 "extension.version" : extension.installInfo.metadata.version
