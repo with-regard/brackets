@@ -48,7 +48,10 @@ define(function (require, exports, module) {
         FileSystem          = require("filesystem/FileSystem"),
         Strings             = require("strings"),
         StringUtils         = require("utils/StringUtils"),
-        Regard              = require("thirdparty/regard");
+        Regard              = require("thirdparty/regard"),
+       CommandManager = require("command/CommandManager"),
+        Menus = require("command/Menus"),
+        NativeApp               = require("utils/NativeApp");
     
     
     // semver.browser is an AMD-compatible module
@@ -107,6 +110,13 @@ define(function (require, exports, module) {
             Regard.setUserId(regardUser);
         }
 
+        CommandManager.register("My Analytics Data", "regard.myanalytics", function(){
+           NativeApp.openURLInDefaultBrowser("http://int-dev.withregard.io:3000/portal#/userevents/" + Regard.getUserId());
+        } );
+        
+        var menu = Menus.getMenu(Menus.AppMenuBar.HELP_MENU);
+        menu.addMenuItem("regard.myanalytics");
+        
         Regard.setRegardURL("https://api.withregard.io/track/v1/Adobe/Brackets/event");
         
         _regardInitialized = true;
