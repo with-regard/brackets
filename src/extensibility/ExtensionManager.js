@@ -111,7 +111,7 @@ define(function (require, exports, module) {
         }
 
         CommandManager.register("My Analytics Data", "regard.myanalytics", function(){
-           NativeApp.openURLInDefaultBrowser("http://www.withregard.io/portal#/userevents/" + Regard.getUserId());
+           NativeApp.openURLInDefaultBrowser("http://www.withregard.io/userdata/Adobe/Brackets/" + Regard.getUserId());
         } );
         
         var menu = Menus.getMenu(Menus.AppMenuBar.HELP_MENU);
